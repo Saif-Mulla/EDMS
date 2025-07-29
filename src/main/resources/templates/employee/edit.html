@@ -10,12 +10,14 @@
     input, select { padding: .3rem; width: 260px; }
     .btn { padding: .4rem .6rem; border: 1px solid #888; background: #f5f5f5; cursor: pointer; }
     .addr { border: 1px solid #ddd; padding: .8rem; margin: .6rem 0; }
+    .err { color: #b00020; font-size: .9rem; margin-left: 140px; }
   </style>
 </head>
 <body>
 
-<h2 th:text="'Edit Employee - ' + ${employee.employeeId}">Edit</h2>
-<form th:action="@{|/api/employee/${employee.employeeId}|}" th:object="${employee}" method="post">
+<h2 th:text="'Edit Employee - ' + ${employee.employeeId}">Edit Employee</h2>
+
+<form th:action="@{|/api/employee/${employee.employeeId}|}" th:object="${employee}" method="post" id="empForm">
 
   <div class="row">
     <label>Employee ID</label>
@@ -33,7 +35,7 @@
     <div class="addr" th:each="a,iter : *{addresses}">
       <div class="row">
         <label>Type</label>
-        <select th:field="*{addresses[__${iter.index}__].addressType}">
+        <select class="address-type-select" th:field="*{addresses[__${iter.index}__].addressType}">
           <option th:each="t : ${addressTypes}" th:value="${t}" th:text="${t}">PRIMARY</option>
         </select>
       </div>
@@ -51,6 +53,7 @@
   </div>
 </form>
 
+<!-- Hidden template for new address rows -->
 <template id="addrTemplate">
   <div class="addr">
     <div class="row">
@@ -70,36 +73,28 @@
 <script>
   // --- Helpers ---
   function $all(sel, ctx=document){ 
-	return Array.from(ctx.querySelectorAll(sel)); 
-
+	return Array.from(ctx.querySelectorAll(sel));
   }
+  
   function countPrimary(){
-    return $all('.address-type-select')
-      .filter(s => (s.value || '').toUpperCase() === 'PRIMARY').length;
+    return $all('.address-type-select').filter(s => (s.value || '').toUpperCase() === 'PRIMARY').length;
   }
-
+  
   function attachSelectHandlers(ctx=document){
     $all('.address-type-select', ctx).forEach(sel => {
-      // prevent duplicate listeners if re-attached
-      sel.removeEventListener('change', onTypeChange);
+      sel.removeEventListener('change', onTypeChange); // avoid duplicates
       sel.addEventListener('change', onTypeChange);
     });
   }
-
   function onTypeChange(e){
-    const totalPrimary = countPrimary();
-    if (totalPrimary > 1){
-      // revert this selection to SECONDARY and warn
+    if (countPrimary() > 1){
       e.target.value = 'SECONDARY';
       alert('Only one PRIMARY address is allowed.');
     }
   }
 
   // --- Add / Remove rows ---
-  function nextIndex(){
-    return document.querySelectorAll('#addresses .addr').length;
-  }
-
+  function nextIndex(){ return document.querySelectorAll('#addresses .addr').length; }
   function addAddress(){
     const tpl = document.getElementById('addrTemplate').innerHTML;
     const idx = nextIndex();
@@ -107,24 +102,15 @@
     const container = document.getElementById('addresses');
     container.insertAdjacentHTML('beforeend', html);
 
-    // ensure the new select exists and gets a handler
     const newBlock = container.lastElementChild;
     const sel = newBlock.querySelector('.address-type-select');
 
-    // If a PRIMARY already exists, default new one to SECONDARY
-    if (countPrimary() >= 1) {
-      sel.value = 'SECONDARY';
-    } else {
-      sel.value = 'PRIMARY';
-    }
+    // default to SECONDARY if a PRIMARY already exists
+    sel.value = (countPrimary() >= 1) ? 'SECONDARY' : 'PRIMARY';
     attachSelectHandlers(newBlock);
   }
-
   function removeAddress(btn){
-    const box = btn.closest('.addr');
-    box.remove();
-    // After removal, nothing else to do—if user removed the PRIMARY,
-    // they can set another one; if multiple PRIMARY existed, removal fixes it.
+    btn.closest('.addr').remove();
   }
 
   // --- Block submit if rule violated ---
@@ -134,12 +120,8 @@
       alert('Only one PRIMARY address is allowed. Please adjust the Address Type.');
       return false;
     }
-    // If you want to require at least one PRIMARY, uncomment below:
-    // if (countPrimary() === 0) {
-    //   e.preventDefault();
-    //   alert('Please select one PRIMARY address.');
-    //   return false;
-    // }
+    // Optionally require at least one PRIMARY:
+    // if (countPrimary() === 0) { e.preventDefault(); alert('Please select one PRIMARY address.'); }
   }
 
   // --- Init ---
@@ -147,7 +129,7 @@
     attachSelectHandlers();
     document.getElementById('empForm').addEventListener('submit', onSubmit);
 
-    // If the server rendered multiple PRIMARY by mistake, normalize: keep the first PRIMARY, flip others to SECONDARY
+    // Normalize any accidental duplicates on initial render: keep first PRIMARY, flip others
     const primarySelects = $all('.address-type-select')
       .filter(s => (s.value || '').toUpperCase() === 'PRIMARY');
     for (let i = 1; i < primarySelects.length; i++){
@@ -155,5 +137,6 @@
     }
   });
 </script>
+
 </body>
 </html>
