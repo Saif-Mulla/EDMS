@@ -21,14 +21,14 @@
 
   <div class="row">
     <label>Employee ID</label>
-    <input th:field="*{employeeId}" readonly/>
+    <input required th:field="*{employeeId}" readonly/>
   </div>
 
-  <div class="row"><label>First Name</label><input th:field="*{firstName}"/></div>
-  <div class="row"><label>Middle Name</label><input th:field="*{middleName}"/></div>
-  <div class="row"><label>Last Name</label><input th:field="*{lastName}"/></div>
-  <div class="row"><label>Designation</label><input th:field="*{designation}"/></div>
-  <div class="row"><label>Department</label><input th:field="*{department}"/></div>
+  <div class="row"><label>First Name</label><input required th:field="*{firstName}"/></div>
+  <div class="row"><label>Middle Name</label><input required th:field="*{middleName}"/></div>
+  <div class="row"><label>Last Name</label><input required th:field="*{lastName}"/></div>
+  <div class="row"><label>Designation</label><input required th:field="*{designation}"/></div>
+  <div class="row"><label>Department</label><input required th:field="*{department}"/></div>
 
   <h3>Addresses</h3>
   <div id="addresses">
